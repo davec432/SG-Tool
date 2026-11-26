@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SG Tool</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#c8371e">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* VOICE: calm, clinical, quick to use on a busy floor
+   IDEA: a ruled interaction record card, filled in from speech
+   PICTURE: the working tool itself: dictation pad, then the finished record
+   COLOUR and TYPE: stone ground, white panels, black ink, brick accent; Schibsted Grotesk
+   LAYOUT: one column, dictate at top, record below, figures as a ruled table */
+:root{color-scheme:light dark;--bg:light-dark(#e7e4df,#171513);--panel:light-dark(#fff,#221f1c);--ink:light-dark(#141210,#f1eee9);--mute:light-dark(#625d56,#a7a097);--rule:light-dark(#d3cec6,#3a3530);--acc:#c8371e;--accInk:#fff;--soft:light-dark(#f6f4f1,#1c1a17)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+.wrap{max-width:760px;margin:0 auto;padding:clamp(20px,4vw,48px) max(4vw,14px) 64px}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.05;margin:0 0 18px;text-wrap:balance}
+.lede{color:var(--mute);margin:0 0 22px;max-width:60ch}
+.panel{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:clamp(16px,3vw,24px);margin-bottom:18px}
+h2{font-size:20px;margin:0 0 12px}
+label{font-weight:500;display:block;margin-bottom:6px}
+textarea,input{font:inherit;font-size:16px;color:var(--ink);background:var(--soft);border:1px solid var(--rule);border-radius:10px;padding:12px;width:100%}
+textarea{min-height:96px;resize:none;overflow:hidden;display:block}
+textarea:focus,input:focus,button:focus-visible{outline:3px solid color-mix(in srgb,var(--acc) 55%,transparent);outline-offset:1px}
+.row{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px;align-items:center}
+button{font:inherit;font-weight:700;min-height:48px;padding:0 18px;border-radius:10px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);cursor:pointer}
+button.pri{background:var(--acc);border-color:var(--acc);color:var(--accInk)}
+button:disabled{opacity:.5;cursor:default}
+.mic{display:inline-flex;gap:8px;align-items:center}
+.kb{font-size:14px;color:var(--acc);margin:6px 0 0;font-weight:500}
+.mic.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.mic .dot{width:10px;height:10px;border-radius:50%;background:var(--acc)}
+.mic.on .dot{animation:p 1s infinite}
+@keyframes p{50%{opacity:.25}}
+@media(prefers-reduced-motion:reduce){.mic.on .dot{animation:none}}
+.sh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.sh label{margin:0}
+.sh .mic{min-height:44px;padding:0 14px}
+.hint{font-size:14px;color:var(--mute);margin:10px 0 0}
+#status{font-size:14px;color:var(--mute)}
+#status.err{color:var(--acc)}
+.sec{border-top:1px solid var(--rule);padding:12px 0}
+.sec:first-of-type{border-top:0;padding-top:0}
+.sec textarea{min-height:96px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid .full{grid-column:1/-1}
+@media(max-width:520px){.grid{grid-template-columns:minmax(0,1fr)}}
+.fig2{display:flex;gap:8px}.fig2 .money{flex:1}.pm{min-width:48px;padding:0;font-size:20px}
+.sh .mic.sm{min-height:40px;padding:0 12px;font-size:15px}
+.money{position:relative}.money span{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mute)}.money input{padding-left:26px}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-variant-numeric:tabular-nums}
+th,td{padding:10px 6px;border-bottom:1px solid var(--rule);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:14px;color:var(--mute);font-weight:500}
+td.pc{font-weight:700;font-size:18px}
+td.pc.hi{color:var(--acc)}
+@media(max-width:440px){th,td{padding:9px 3px;font-size:14px}td.pc{font-size:16px}th{font-size:12px}}
+pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid var(--rule);border-radius:10px;padding:14px;margin:0}
+.note{font-size:14px;color:var(--mute)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SG Tool</h1>
+
+
+
+  <section class="panel">
+    <div class="sec"><div class="sh"><label for="obs">Observation</label><button class="mic" type="button" data-t="obs"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="obs"></textarea></div>
+    <div class="sec"><div class="sh"><label for="act">Action</label><button class="mic" type="button" data-t="act"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="act" style="min-height:260px"></textarea><div class="row" style="margin-top:8px"><button type="button" id="addPG">No signs of PG</button><button type="button" id="addFF">Friends and Family</button><button type="button" id="addSRM">SRMs</button><span id="ffMsg" class="note" role="status"></span></div></div>
+    <div class="sec"><div class="sh"><label for="aff">Affordability information</label><button class="mic" type="button" data-t="aff"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="aff"></textarea></div>
+    <div class="sec"><div class="sh"><label for="out">Outcome</label><button class="mic" type="button" data-t="out"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="out"></textarea><div class="row" style="margin-top:8px"><button type="button" id="addBR">Continue BR</button><span id="brMsg" class="note" role="status"></span></div></div>
+    <p class="hint">Speak or type straight into each section.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Affordability</h2>
+    <div class="grid">
+      <div class="full"><div class="sh"><label for="sal">Annual salary</label><button class="mic sm" type="button" data-t="sal" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="money"><span>£</span><input id="sal" inputmode="decimal" autocomplete="off"></div></div>
+      <div><div class="sh"><label for="m1">One month</label><button class="mic sm" type="button" data-t="m1" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m1" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m1" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
+      <div><div class="sh"><label for="m3">Three months</label><button class="mic sm" type="button" data-t="m3" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m3" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m3" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
+      <div><div class="sh"><label for="m12">Twelve months</label><button class="mic sm" type="button" data-t="m12" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m12" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m12" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
+    </div>
+    <table>
+      <thead><tr><th>Period</th><th>Result</th><th>Income</th><th>%</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Ready to paste</h2>
+    <pre id="final"></pre>
+    <div class="row">
+      <button id="copy" class="pri" type="button">Copy note</button>
+      <button id="clear" type="button">Start new note</button>
+      <label style="display:flex;gap:8px;align-items:center;margin:0;font-weight:400"><input type="checkbox" id="incSal" style="width:20px;height:20px"> Include salary line</label>
+      <span id="copied" class="note" role="status"></span>
+    </div>
+  </section>
+</div>
+
+<script>
+{
+const $=id=>document.getElementById(id);
+const P=[['One month','m1',12],['Three months','m3',4],['Twelve months','m12',1]];
+const num=v=>{const n=parseFloat(String(v??'').replace(/[\u2212\u2013]/g,'-').replace(/[£,\s]/g,''));return isFinite(n)?n:null};
+const gbp=n=>'£'+n.toLocaleString('en-GB',{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2});
+const res=n=>(n<0?'-':n>0?'+':'')+gbp(Math.abs(n));
+const pct=n=>Math.abs(n).toLocaleString('en-GB',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
+
+function calc(){
+  const sal=num($('sal').value);
+  const tb=$('tb');tb.textContent='';
+  const lines=[];
+  for(const [name,id,div] of P){
+    const v=num($(id).value);
+    const inc=sal&&sal>0?sal/div:null;
+    const p=v!=null&&inc?v/inc*100:null;
+    const tr=document.createElement('tr');
+    [name,v!=null?res(v):'–',inc?gbp(Math.round(inc)):'–',p!=null?pct(p):'–'].forEach((t,i)=>{const td=document.createElement('td');td.textContent=t;if(i===3){td.className='pc'+(p!=null&&p<=-10?' hi':'')}tr.appendChild(td)});
+    tb.appendChild(tr);
+    lines.push(name+': '+(v!=null?res(v):'')+(p!=null&&v!==0?' ('+pct(p)+' of income '+(v<0?'lost':'won')+')':''));
+  }
+  const parts=['Observation: '+$('obs').value.trim(),'Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim(),'']:[]),'Outcome: '+$('out').value.trim(),''];
+  if($('incSal').checked&&sal)parts.push('Annual salary: '+gbp(sal));
+  $('final').textContent=parts.concat(lines).join('\n');
+}
+['obs','act','aff','out','sal','m1','m3','m12'].forEach(id=>$(id).addEventListener('input',calc));
+$('incSal').addEventListener('change',calc);
+const FF="The customer confirmed that their friends and family don't have any concerns about their casino visits and level of play.";
+$('addFF').addEventListener('click',()=>{const o=$('act');if(o.value.includes(FF)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+' '+FF:FF;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
+const SRM="Safer gambling tools have been discussed, such as SENSE, SRMs, leaflets on site, and should they have any issues to speak with a member of staff.";
+$('addSRM').addEventListener('click',()=>{const o=$('act');if(o.value.includes(SRM)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+'\n\n'+SRM:SRM;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
+const PG="The customer was willing to take a break to have the interaction and showed no signs of PG.";
+$('addPG').addEventListener('click',()=>{const o=$('act');if(o.value.includes(PG)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?PG+' '+o.value.trim():PG;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
+const BR="BR to continue customer to be monitored through PBI and RM for high velocity play, if so, further interactions will take place.";
+$('addBR').addEventListener('click',()=>{const o=$('out');if(o.value.includes(BR)){$('brMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+' '+BR:BR;$('brMsg').textContent='Added.';calc();setTimeout(()=>$('brMsg').textContent='',3000)});
+document.querySelectorAll('.pm').forEach(b=>b.addEventListener('click',()=>{const i=$(b.dataset.t);const v=i.value.trim().replace(/^[-+]/,'');i.value=(i.value.trim().startsWith('+')?'-':'+')+v;calc()}));
+
+/* Spoken or typed figures: numbers, words and UK slang. Figures are a loss unless winning or + */
+const W={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+const UNIT={hundred:100,k:1e3,thousand:1e3,grand:1e3,large:1e3,bag:1e3,bags:1e3,million:1e6,mil:1e6,ton:100,tons:100,monkey:500,monkeys:500,pony:25,ponies:25,score:20,scores:20};
+function spoken(s){
+  let t=' '+String(s).toLowerCase().replace(/[−–]/g,'-').replace(/(\d),(\d)/g,'$1$2')
+    .replace(/\bhalf a (grand|k|bag of sand|bag|large)\b/g,'500').replace(/\bhalf a (ton|hundred)\b/g,'50')
+    .replace(/\bbags? of sand\b/g,'grand').replace(/\b(a|an)\s+(grand|ton|monkey|pony|score|bag|hundred|thousand)\b/g,'1 $2')
+    .replace(/\b(quid|nicker|pounds?|sterling|bucks)\b|£/g,' ').replace(/[^\w.+\-\s]/g,' ')+' ';
+  /* number words to digits */
+  const out=[];let cur=null,tot=0,any=false;const flush=()=>{if(any)out.push(String(tot+(cur||0)));cur=null;tot=0;any=false};
+  for(const w of t.split(/\s+/)){
+    if(w in W){cur=(cur||0)+W[w];any=true}
+    else if(any&&(w==='hundred'))cur=(cur||1)*100;
+    else if(any&&/^(thousand|grand|k|large)$/.test(w)){tot+=(cur||1)*1e3;cur=0}
+    else if(any&&/^(million|mil)$/.test(w)){tot+=(cur||1)*1e6;cur=0}
+    else if(w==='and'&&any){}
+    else{flush();out.push(w)}
+  }
+  flush();t=' '+out.join(' ')+' ';
+  let total=0,found=false;const re=/(\d+(?:\.\d+)?)\s*(hundred|k|thousand|grand|large|bags?|million|mil|tons?|monkeys?|pony|ponies|scores?)?\b/g;let m;
+  while(m=re.exec(t)){total+=parseFloat(m[1])*(UNIT[m[2]]||1);found=true}
+  if(!found)return null;
+  const win=/\b(win\w*|won|up|plus|positive|profit|ahead)\b|\+/.test(t)&&!/\b(los\w*|lost|down|minus|negative)\b/.test(t);
+  return {v:Math.round(total*100)/100,win};
+}
+const FIG=['m1','m3','m12'];
+function tidy(id){
+  const i=$(id),v=i.value.trim();if(!v)return;
+  if(/^[-+]?\d[\d,]*(\.\d+)?$/.test(v)){if(FIG.includes(id)&&!/^[-+]/.test(v))i.value='-'+v;return}
+  const r=spoken(v);if(!r)return;
+  i.value=id==='sal'?String(r.v):(r.win?'+':'-')+r.v;
+}
+const timers={};
+['sal',...FIG].forEach(id=>{
+  const i=$(id);
+  i.addEventListener('input',()=>{
+    const v=i.value;
+    if(FIG.includes(id)&&/^\d/.test(v)){i.value='-'+v}
+    clearTimeout(timers[id]);
+    if(/[a-z]/i.test(v))timers[id]=setTimeout(()=>{tidy(id);calc()},1200);
+    calc();
+  });
+  i.addEventListener('blur',()=>{clearTimeout(timers[id]);tidy(id);i.setAttribute('inputmode','decimal');calc()});
+});
+calc();
+/* Boxes grow to fit their text, so the page (not the box) scrolls */
+const grow=t=>{t.style.height='auto';t.style.height=t.scrollHeight+2+'px'};
+document.querySelectorAll('textarea').forEach(t=>{t.addEventListener('input',()=>grow(t));grow(t)});
+const regrow=()=>document.querySelectorAll('textarea').forEach(grow);
+document.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>setTimeout(regrow,0)));
+window.addEventListener('resize',regrow);
+
+$('clear').addEventListener('click',()=>{
+  ['obs','act','aff','out','sal','m1','m3','m12'].forEach(id=>$(id).value='');
+  calc();$('copied').textContent='';calc();
+});
+
+$('copy').addEventListener('click',async()=>{
+  calc();
+  try{await navigator.clipboard.writeText($('final').textContent);$('copied').textContent='Copied.'}
+  catch(e){const r=document.createRange();r.selectNodeContents($('final'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);$('copied').textContent='Selected — copy it from the menu.'}
+});
+
+/* Speak: open the keyboard on that box so its microphone can be used */
+document.querySelectorAll('.mic').forEach(b=>b.addEventListener('click',()=>{
+  const t=$(b.dataset.t);if(b.dataset.kb){t.blur();t.setAttribute('inputmode','text')}t.focus();
+  try{const n=t.value.length;t.setSelectionRange(n,n)}catch(e){}
+}));
+}
+</script>
+<script>if('serviceWorker' in navigator&&isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{})</script>
+</body>
+</html>
