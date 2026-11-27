@@ -14,8 +14,8 @@
    PICTURE: the working tool itself: dictation pad, then the finished record
    COLOUR and TYPE: stone ground, white panels, black ink, brick accent; Schibsted Grotesk
    LAYOUT: one column, dictate at top, record below, figures as a ruled table */
-:root{color-scheme:light;--bg:light-dark(#eef2f6,#11171e);--panel:light-dark(#fff,#1a222c);--ink:light-dark(#18222e,#e8edf3);--mute:light-dark(#5a6878,#9aa8b7);--rule:light-dark(#d5dde6,#2d3946);--acc:light-dark(#2f5d8a,#7eaad6);--accInk:light-dark(#fff,#0c1724);--soft:light-dark(#f7f9fb,#151c25);--bad:light-dark(#c0392b,#ff8a7a)}
-:root,:root[data-theme]{color-scheme:light}
+:root{color-scheme:light only;--bg:#eef2f6;--panel:#fff;--ink:#18222e;--mute:#5a6878;--rule:#d5dde6;--acc:#2f5d8a;--accInk:#fff;--soft:#f7f9fb;--bad:#c0392b}
+html,:root,:root[data-theme],:root[data-theme=dark]{color-scheme:light only!important;background:#eef2f6}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 .wrap{max-width:760px;margin:0 auto;padding:clamp(20px,4vw,48px) max(4vw,14px) 64px}
@@ -183,8 +183,6 @@ let custom={};
 try{custom=JSON.parse(localStorage.getItem(CKEY)||'{}')||{}}catch(e){custom={}}
 const cfg=d=>({...d,...(custom[d.id]||{})});
 const saveCustom=()=>{try{localStorage.setItem(CKEY,JSON.stringify(custom));return true}catch(e){return false}};
-const BOXNAME={act:'Action',out:'Outcome'};
-const MODENAME={start:'adds at the start',end:'adds at the end',para:'adds as a new paragraph'};
 function renderButtons(){
   document.querySelectorAll('.qa').forEach(row=>{
     row.textContent='';
@@ -208,10 +206,10 @@ function renderCustom(){
   const list=$('custList');list.textContent='';
   DEFAULTS.forEach(d=>{
     const c=cfg(d),wrap=document.createElement('div');wrap.className='cb';
-    const meta=document.createElement('p');meta.className='meta';meta.textContent=BOXNAME[d.box]+' box, '+MODENAME[d.mode];
-    const ll=document.createElement('label');ll.textContent='Button name';ll.htmlFor='cl-'+d.id;
+    
+    const ll=document.createElement('label');ll.textContent='Button';ll.htmlFor='cl-'+d.id;
     const li=document.createElement('input');li.id='cl-'+d.id;li.value=c.label;li.autocomplete='off';
-    const tl=document.createElement('label');tl.textContent='Wording it adds';tl.htmlFor='ct-'+d.id;
+    const tl=document.createElement('label');tl.textContent='Wording';tl.htmlFor='ct-'+d.id;
     const ta=document.createElement('textarea');ta.id='ct-'+d.id;ta.value=c.text;
     const row=document.createElement('div');row.className='row';
     const rb=document.createElement('button');rb.type='button';rb.textContent='Reset this button';
@@ -227,7 +225,7 @@ function renderCustom(){
     li.addEventListener('input',upd);
     ta.addEventListener('input',()=>{upd();if(typeof grow==='function')grow(ta)});
     rb.addEventListener('click',()=>{delete custom[d.id];saveCustom();li.value=d.label;ta.value=d.text;st.textContent='Reset.';renderButtons();if(typeof grow==='function')grow(ta)});
-    wrap.append(meta,ll,li,tl,ta,row);list.appendChild(wrap);
+    wrap.append(ll,li,tl,ta,row);list.appendChild(wrap);
   });
 }
 $('custReset').addEventListener('click',()=>{custom={};saveCustom();renderCustom();renderButtons();$('custMsg').textContent='All buttons reset.';setTimeout(()=>{$('custMsg').textContent=''},3000)});
