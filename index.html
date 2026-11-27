@@ -38,6 +38,8 @@ button:disabled{opacity:.5;cursor:default}
 .mic.on .dot{animation:p 1s infinite}
 @keyframes p{50%{opacity:.25}}
 @media(prefers-reduced-motion:reduce){.mic.on .dot{animation:none}}
+summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;gap:8px}summary::-webkit-details-marker{display:none}summary::after{content:"\25BE";font-size:18px;color:var(--mute)}details[open] summary::after{content:"\25B4"}
+.cb{border-top:1px solid var(--rule);padding:14px 0}.cb:first-child{border-top:0}.cb .meta{font-size:13px;color:var(--mute);margin:0 0 6px}.cb input{margin-bottom:8px}.cb textarea{min-height:96px}.cb .row{margin-top:8px}
 .sh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
 .sh label{margin:0}
 .sh .mic{min-height:44px;padding:0 14px}
@@ -72,9 +74,9 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
 
   <section class="panel">
     <div class="sec"><div class="sh"><label for="obs">Observation</label><button class="mic" type="button" data-t="obs"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="obs"></textarea></div>
-    <div class="sec"><div class="sh"><label for="act">Action</label><button class="mic" type="button" data-t="act"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="act" style="min-height:260px"></textarea><div class="row" style="margin-top:8px"><button type="button" id="addPG">No signs of PG</button><button type="button" id="addFF">Friends and Family</button><button type="button" id="addSRM">SRMs</button><span id="ffMsg" class="note" role="status"></span></div></div>
+    <div class="sec"><div class="sh"><label for="act">Action</label><button class="mic" type="button" data-t="act"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="act" style="min-height:260px"></textarea><div class="row qa" data-box="act" style="margin-top:8px"></div></div>
     <div class="sec"><div class="sh"><label for="aff">Affordability information</label><button class="mic" type="button" data-t="aff"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="aff"></textarea></div>
-    <div class="sec"><div class="sh"><label for="out">Outcome</label><button class="mic" type="button" data-t="out"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="out"></textarea><div class="row" style="margin-top:8px"><button type="button" id="addBR">Continue BR</button><span id="brMsg" class="note" role="status"></span></div></div>
+    <div class="sec"><div class="sh"><label for="out">Outcome</label><button class="mic" type="button" data-t="out"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="out"></textarea><div class="row qa" data-box="out" style="margin-top:8px"></div></div>
     <p class="hint">Speak or type straight into each section.</p>
   </section>
 
@@ -102,6 +104,15 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
       <span id="copied" class="note" role="status"></span>
     </div>
   </section>
+  <section class="panel">
+    <details id="cust">
+      <summary><h2 style="display:inline">Customise buttons</h2></summary>
+      <p class="hint">Change a button&rsquo;s name or the wording it adds. Changes save on this phone straight away.</p>
+      <div id="custList"></div>
+      <div class="row"><button type="button" id="custReset">Reset all to original</button><span id="custMsg" class="note" role="status"></span></div>
+    </details>
+  </section>
+
 </div>
 
 <script>
@@ -132,14 +143,70 @@ function calc(){
 }
 ['obs','act','aff','out','sal','m1','m3','m12'].forEach(id=>$(id).addEventListener('input',calc));
 $('incSal').addEventListener('change',calc);
-const FF="The customer confirmed that their friends and family don't have any concerns about their casino visits and level of play.";
-$('addFF').addEventListener('click',()=>{const o=$('act');if(o.value.includes(FF)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+' '+FF:FF;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
-const SRM="Safer gambling tools have been discussed, such as SENSE, SRMs, leaflets on site, and should they have any issues to speak with a member of staff.";
-$('addSRM').addEventListener('click',()=>{const o=$('act');if(o.value.includes(SRM)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+'\n\n'+SRM:SRM;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
-const PG="The customer was willing to take a break to have the interaction and showed no signs of PG.";
-$('addPG').addEventListener('click',()=>{const o=$('act');if(o.value.includes(PG)){$('ffMsg').textContent='Already added.';return}o.value=o.value.trim()?PG+' '+o.value.trim():PG;$('ffMsg').textContent='Added.';calc();setTimeout(()=>$('ffMsg').textContent='',3000)});
-const BR="BR to continue customer to be monitored through PBI and RM for high velocity play, if so, further interactions will take place.";
-$('addBR').addEventListener('click',()=>{const o=$('out');if(o.value.includes(BR)){$('brMsg').textContent='Already added.';return}o.value=o.value.trim()?o.value.trim()+' '+BR:BR;$('brMsg').textContent='Added.';calc();setTimeout(()=>$('brMsg').textContent='',3000)});
+
+/* Quick-add buttons, customisable and remembered on this phone */
+const DEFAULTS=[
+ {id:'PG',box:'act',mode:'start',label:'No signs of PG',text:"The customer was willing to take a break to have the interaction and showed no signs of PG."},
+ {id:'FF',box:'act',mode:'end',label:'Friends and Family',text:"The customer confirmed that their friends and family don't have any concerns about their casino visits and level of play."},
+ {id:'SRM',box:'act',mode:'para',label:'SRMs',text:"Safer gambling tools have been discussed, such as SENSE, SRMs, leaflets on site, and should they have any issues to speak with a member of staff."},
+ {id:'BR',box:'out',mode:'end',label:'Continue BR',text:"BR to continue customer to be monitored through PBI and RM for high velocity play, if so, further interactions will take place."}
+];
+const CKEY='sgtool-buttons';
+let custom={};
+try{custom=JSON.parse(localStorage.getItem(CKEY)||'{}')||{}}catch(e){custom={}}
+const cfg=d=>({...d,...(custom[d.id]||{})});
+const saveCustom=()=>{try{localStorage.setItem(CKEY,JSON.stringify(custom));return true}catch(e){return false}};
+const BOXNAME={act:'Action',out:'Outcome'};
+const MODENAME={start:'adds at the start',end:'adds at the end',para:'adds as a new paragraph'};
+function renderButtons(){
+  document.querySelectorAll('.qa').forEach(row=>{
+    row.textContent='';
+    DEFAULTS.filter(d=>d.box===row.dataset.box).forEach(d=>{
+      const b=document.createElement('button');b.type='button';b.textContent=cfg(d).label||d.label;
+      b.addEventListener('click',()=>addText(d,row));row.appendChild(b);
+    });
+    const m=document.createElement('span');m.className='note';m.setAttribute('role','status');row.appendChild(m);
+  });
+}
+function addText(d,row){
+  const c=cfg(d),o=$(d.box),t=(c.text||'').trim(),msg=row.querySelector('.note');
+  if(!t)return;
+  if(o.value.includes(t)){msg.textContent='Already added.';return}
+  const v=o.value.trim();
+  o.value=!v?t:d.mode==='start'?t+' '+v:d.mode==='para'?v+'\n\n'+t:v+' '+t;
+  msg.textContent='Added.';calc();setTimeout(()=>{msg.textContent=''},3000);
+  if(typeof grow==='function')grow(o);
+}
+function renderCustom(){
+  const list=$('custList');list.textContent='';
+  DEFAULTS.forEach(d=>{
+    const c=cfg(d),wrap=document.createElement('div');wrap.className='cb';
+    const meta=document.createElement('p');meta.className='meta';meta.textContent=BOXNAME[d.box]+' box, '+MODENAME[d.mode];
+    const ll=document.createElement('label');ll.textContent='Button name';ll.htmlFor='cl-'+d.id;
+    const li=document.createElement('input');li.id='cl-'+d.id;li.value=c.label;li.autocomplete='off';
+    const tl=document.createElement('label');tl.textContent='Wording it adds';tl.htmlFor='ct-'+d.id;
+    const ta=document.createElement('textarea');ta.id='ct-'+d.id;ta.value=c.text;
+    const row=document.createElement('div');row.className='row';
+    const rb=document.createElement('button');rb.type='button';rb.textContent='Reset this button';
+    const st=document.createElement('span');st.className='note';st.setAttribute('role','status');
+    row.append(rb,st);
+    const upd=()=>{
+      const lab=li.value.trim(),txt=ta.value.trim();
+      const o={};if(lab&&lab!==d.label)o.label=lab;if(txt!==d.text)o.text=txt;
+      if(Object.keys(o).length)custom[d.id]=o;else delete custom[d.id];
+      st.textContent=saveCustom()?'Saved.':'Couldn\u2019t save on this phone.';
+      renderButtons();
+    };
+    li.addEventListener('input',upd);
+    ta.addEventListener('input',()=>{upd();if(typeof grow==='function')grow(ta)});
+    rb.addEventListener('click',()=>{delete custom[d.id];saveCustom();li.value=d.label;ta.value=d.text;st.textContent='Reset.';renderButtons();if(typeof grow==='function')grow(ta)});
+    wrap.append(meta,ll,li,tl,ta,row);list.appendChild(wrap);
+  });
+}
+$('custReset').addEventListener('click',()=>{custom={};saveCustom();renderCustom();renderButtons();$('custMsg').textContent='All buttons reset.';setTimeout(()=>{$('custMsg').textContent=''},3000)});
+$('cust').addEventListener('toggle',()=>{if($('cust').open&&typeof grow==='function')document.querySelectorAll('#custList textarea').forEach(grow)});
+renderButtons();renderCustom();
+
 document.querySelectorAll('.pm').forEach(b=>b.addEventListener('click',()=>{const i=$(b.dataset.t);const v=i.value.trim().replace(/^[-+]/,'');i.value=(i.value.trim().startsWith('+')?'-':'+')+v;calc()}));
 
 /* Spoken or typed figures: numbers, words and UK slang. Figures are a loss unless winning or + */
