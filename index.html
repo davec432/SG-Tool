@@ -14,11 +14,22 @@
    PICTURE: the working tool itself: dictation pad, then the finished record
    COLOUR and TYPE: stone ground, white panels, black ink, brick accent; Schibsted Grotesk
    LAYOUT: one column, dictate at top, record below, figures as a ruled table */
-:root{color-scheme:light dark;--bg:light-dark(#eef2f6,#11171e);--panel:light-dark(#fff,#1a222c);--ink:light-dark(#18222e,#e8edf3);--mute:light-dark(#5a6878,#9aa8b7);--rule:light-dark(#d5dde6,#2d3946);--acc:light-dark(#2f5d8a,#7eaad6);--accInk:light-dark(#fff,#0c1724);--soft:light-dark(#f7f9fb,#151c25);--bad:light-dark(#c0392b,#ff8a7a)}
-:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+:root{color-scheme:light;--bg:light-dark(#eef2f6,#11171e);--panel:light-dark(#fff,#1a222c);--ink:light-dark(#18222e,#e8edf3);--mute:light-dark(#5a6878,#9aa8b7);--rule:light-dark(#d5dde6,#2d3946);--acc:light-dark(#2f5d8a,#7eaad6);--accInk:light-dark(#fff,#0c1724);--soft:light-dark(#f7f9fb,#151c25);--bad:light-dark(#c0392b,#ff8a7a)}
+:root,:root[data-theme]{color-scheme:light}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 .wrap{max-width:760px;margin:0 auto;padding:clamp(20px,4vw,48px) max(4vw,14px) 64px}
+@media(min-width:1000px){
+  .wrap{max-width:1320px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);column-gap:24px;align-items:start}
+  .top{grid-column:1/-1}
+  .p-notes{grid-column:1;grid-row:2/span 2}
+  .p-aff{grid-column:2;grid-row:2}
+  .p-paste{grid-column:2;grid-row:3}
+  .p-cust{grid-column:1/-1;grid-row:4}
+  #act{min-height:320px!important}
+  .p-cust #custList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px}
+  .p-cust .cb:nth-child(2){border-top:0}
+}
 h1{font-size:clamp(28px,6vw,40px);line-height:1.05;margin:0;text-wrap:balance}
 .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}
 [hidden]{display:none!important}
@@ -75,7 +86,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
 
 
 
-  <section class="panel">
+  <section class="panel p-notes">
     <div class="sec"><div class="sh"><label for="obs">Observation</label><button class="mic" type="button" data-t="obs"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="obs"></textarea></div>
     <div class="sec"><div class="sh"><label for="act">Action</label><button class="mic" type="button" data-t="act"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="act" style="min-height:260px"></textarea><div class="row qa" data-box="act" style="margin-top:8px"></div></div>
     <div class="sec"><div class="sh"><label for="aff">Affordability Information</label><button class="mic" type="button" data-t="aff"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="aff"></textarea></div>
@@ -83,7 +94,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
     <p class="hint">Speak or type straight into each section.</p>
   </section>
 
-  <section class="panel">
+  <section class="panel p-aff">
     <h2>Affordability</h2>
     <div class="grid">
       <div class="full"><div class="sh"><label for="sal">Annual salary</label><button class="mic sm" type="button" data-t="sal" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="money"><span>£</span><input id="sal" inputmode="decimal" autocomplete="off"></div></div>
@@ -97,7 +108,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
     </table>
   </section>
 
-  <section class="panel">
+  <section class="panel p-paste">
     <h2>Ready to paste</h2>
     <pre id="final"></pre>
     <div class="row">
@@ -107,10 +118,10 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
       <span id="copied" class="note" role="status"></span>
     </div>
   </section>
-  <section class="panel">
+  <section class="panel p-cust">
     <details id="cust">
       <summary><h2 style="display:inline">Customise buttons</h2></summary>
-      <p class="hint">Change a button&rsquo;s name or the wording it adds. Changes save on this phone straight away.</p>
+      <p class="hint">Change a button&rsquo;s name or the wording it adds. Changes save on this device straight away.</p>
       <div id="custList"></div>
       <div class="row"><button type="button" id="custReset">Reset all to original</button><span id="custMsg" class="note" role="status"></span></div>
     </details>
@@ -140,7 +151,7 @@ function calc(){
     tb.appendChild(tr);
     lines.push(name+': '+(v!=null?res(v):'')+(p!=null&&v!==0?' ('+pct(p)+' of income '+(v<0?'lost':'won')+')':''));
   }
-  const parts=['Observation: '+$('obs').value.trim(),'','Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim(),'']:[]),'Outcome: '+$('out').value.trim(),''];
+  const parts=['Observation: '+$('obs').value.trim(),'','Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim()]:[]),'','Outcome: '+$('out').value.trim(),''];
   if($('incSal').checked&&sal)parts.push('Annual salary: '+gbp(sal));
   $('final').textContent=parts.concat(lines).join('\n');
 }
@@ -210,7 +221,7 @@ function renderCustom(){
       const lab=li.value.trim(),txt=ta.value.trim();
       const o={};if(lab&&lab!==d.label)o.label=lab;if(txt!==d.text)o.text=txt;
       if(Object.keys(o).length)custom[d.id]=o;else delete custom[d.id];
-      st.textContent=saveCustom()?'Saved.':'Couldn\u2019t save on this phone.';
+      st.textContent=saveCustom()?'Saved.':'Couldn\u2019t save on this device.';
       renderButtons();
     };
     li.addEventListener('input',upd);
