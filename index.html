@@ -83,6 +83,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
 <body>
 <div class="wrap">
   <div class="top"><h1>SG Tool</h1><button type="button" id="inst" class="pri" hidden>Install app</button><p id="instHint" hidden>Tap the Share button, then Add to Home Screen.</p></div>
+  <button type="button" id="updBtn" class="pri" hidden style="width:100%;margin:0 0 18px">New version ready. Tap to update</button>
 
 
 
@@ -327,6 +328,22 @@ document.querySelectorAll('.mic').forEach(b=>b.addEventListener('click',()=>{
 }));
 }
 </script>
-<script>if('serviceWorker' in navigator&&isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{})</script>
+<script>
+if('serviceWorker' in navigator&&isSecureContext){
+  const busy=()=>[...document.querySelectorAll('textarea,input:not([type=checkbox])')].some(e=>e.value.trim()&&!e.closest('#custList'));
+  let reloading=false;
+  const apply=()=>{if(reloading)return;reloading=true;location.reload()};
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+    if(!busy())apply();
+    else{const b=document.getElementById('updBtn');if(b){b.hidden=false;b.onclick=apply}}
+  });
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{
+    const check=()=>{if(navigator.onLine)reg.update().catch(()=>{})};
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)check()});
+    window.addEventListener('online',check);
+    setInterval(check,30*60*1000);
+  }).catch(()=>{});
+}
+</script>
 </body>
 </html>
