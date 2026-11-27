@@ -136,6 +136,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
 <script>
 {
 const $=id=>document.getElementById(id);
+const IOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 const P=[['One month','m1',12],['Three months','m3',4],['Twelve months','m12',1]];
 const num=v=>{const n=parseFloat(String(v??'').replace(/[\u2212\u2013]/g,'-').replace(/[£,\s]/g,''));return isFinite(n)?n:null};
 const gbp=n=>'£'+n.toLocaleString('en-GB',{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2});
@@ -165,7 +166,8 @@ $('incSal').addEventListener('change',calc);
 {
   const inst=$('inst'),hint=$('instHint');let dp=null;
   const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
-  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ios=IOS,inApp=ios&&!/Safari\//.test(navigator.userAgent);
+  if(inApp)hint.textContent='To install, open this page in Safari first (use the \u22EF or compass button), then tap Share and Add to Home Screen.';
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;if(!standalone)inst.hidden=false});
   window.addEventListener('appinstalled',()=>{dp=null;inst.hidden=true;hint.hidden=true});
   if(ios&&!standalone&&location.protocol==='https:'&&document.querySelector('link[rel=manifest]'))inst.hidden=false;
@@ -303,7 +305,7 @@ $('copy').addEventListener('click',async()=>{
 
 /* Speak: use the app's own microphone when it can (needs signal); otherwise open the keyboard so its microphone can be used */
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-let srOK=!!SR&&isSecureContext&&(location.protocol==='https:'||location.hostname==='localhost'),rec=null,recBtn=null,recBox=null,recBase='';
+let srOK=!!SR&&!IOS&&isSecureContext&&(location.protocol==='https:'||location.hostname==='localhost'),rec=null,recBtn=null,recBox=null,recBase='';
 function flash(t,msg){document.querySelectorAll('.kb').forEach(e=>e.remove());const p=document.createElement('p');p.className='kb';p.textContent=msg;t.after(p);setTimeout(()=>p.remove(),6000)}
 function keyboard(b,t){if(b.dataset.kb){t.blur();t.setAttribute('inputmode','text')}t.focus();try{const n=t.value.length;t.setSelectionRange(n,n)}catch(e){}}
 function setBtn(b,on){b.classList.toggle('on',on);b.querySelector('.mt').textContent=on?'Stop':'Speak'}
@@ -323,7 +325,7 @@ document.querySelectorAll('.mic').forEach(b=>b.addEventListener('click',()=>{
   r.onresult=e=>{if(r!==rec)return;let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)recBase+=x[0].transcript.trim()+' ';else interim+=x[0].transcript}
     t.value=recBase+interim;if(!FIG.includes(t.id)&&t.id!=='sal'){t.dispatchEvent(new Event('input'))}};
   r.onerror=e=>{if(r!==rec)return;const er=e.error;finish();
-    if(er==='not-allowed'||er==='service-not-allowed'){srOK=false;flash(t,'Microphone not allowed. Tap Speak to use your keyboard’s microphone instead.')}
+    if(er==='not-allowed'||er==='service-not-allowed'){srOK=false;flash(t,'The app’s microphone isn’t available here. Tap Speak again to use your keyboard’s microphone.')}
     else if(er==='network'){flash(t,'No signal for the app’s microphone. Tap Speak to use your keyboard’s microphone.');srOK=false}
     else if(er!=='no-speech'&&er!=='aborted'){flash(t,'Microphone stopped. Tap Speak to try again.')}};
   r.onend=()=>{if(r===rec)finish()};
