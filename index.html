@@ -19,7 +19,10 @@
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
 .wrap{max-width:760px;margin:0 auto;padding:clamp(20px,4vw,48px) max(4vw,14px) 64px}
-h1{font-size:clamp(28px,6vw,40px);line-height:1.05;margin:0 0 18px;text-wrap:balance}
+h1{font-size:clamp(28px,6vw,40px);line-height:1.05;margin:0;text-wrap:balance}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 18px}
+[hidden]{display:none!important}
+#instHint{flex-basis:100%;margin:0;font-size:15px;color:var(--mute)}
 .lede{color:var(--mute);margin:0 0 22px;max-width:60ch}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:clamp(16px,3vw,24px);margin-bottom:18px}
 h2{font-size:20px;margin:0 0 12px}
@@ -68,7 +71,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
 </head>
 <body>
 <div class="wrap">
-  <h1>SG Tool</h1>
+  <div class="top"><h1>SG Tool</h1><button type="button" id="inst" class="pri" hidden>Install app</button><p id="instHint" hidden>Tap the Share button, then Add to Home Screen.</p></div>
 
 
 
@@ -143,6 +146,19 @@ function calc(){
 }
 ['obs','act','aff','out','sal','m1','m3','m12'].forEach(id=>$(id).addEventListener('input',calc));
 $('incSal').addEventListener('change',calc);
+/* Install app button: only shown when the app can be installed */
+{
+  const inst=$('inst'),hint=$('instHint');let dp=null;
+  const standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;if(!standalone)inst.hidden=false});
+  window.addEventListener('appinstalled',()=>{dp=null;inst.hidden=true;hint.hidden=true});
+  if(ios&&!standalone&&location.protocol==='https:'&&document.querySelector('link[rel=manifest]'))inst.hidden=false;
+  inst.addEventListener('click',()=>{
+    if(dp){dp.prompt();dp.userChoice.then(r=>{if(r&&r.outcome==='accepted')inst.hidden=true;dp=null}).catch(()=>{})}
+    else hint.hidden=!hint.hidden;
+  });
+}
 
 /* Quick-add buttons, customisable and remembered on this phone */
 const DEFAULTS=[
