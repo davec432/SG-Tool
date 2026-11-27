@@ -140,7 +140,7 @@ function calc(){
     tb.appendChild(tr);
     lines.push(name+': '+(v!=null?res(v):'')+(p!=null&&v!==0?' ('+pct(p)+' of income '+(v<0?'lost':'won')+')':''));
   }
-  const parts=['Observation: '+$('obs').value.trim(),'Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim(),'']:[]),'Outcome: '+$('out').value.trim(),''];
+  const parts=['Observation: '+$('obs').value.trim(),'','Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim(),'']:[]),'Outcome: '+$('out').value.trim(),''];
   if($('incSal').checked&&sal)parts.push('Annual salary: '+gbp(sal));
   $('final').textContent=parts.concat(lines).join('\n');
 }
@@ -288,10 +288,33 @@ $('copy').addEventListener('click',async()=>{
   catch(e){const r=document.createRange();r.selectNodeContents($('final'));const sel=getSelection();sel.removeAllRanges();sel.addRange(r);$('copied').textContent='Selected — copy it from the menu.'}
 });
 
-/* Speak: open the keyboard on that box so its microphone can be used */
+/* Speak: use the app's own microphone when it can (needs signal); otherwise open the keyboard so its microphone can be used */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let srOK=!!SR&&isSecureContext&&(location.protocol==='https:'||location.hostname==='localhost'),rec=null,recBtn=null,recBox=null,recBase='';
+function flash(t,msg){document.querySelectorAll('.kb').forEach(e=>e.remove());const p=document.createElement('p');p.className='kb';p.textContent=msg;t.after(p);setTimeout(()=>p.remove(),6000)}
+function keyboard(b,t){if(b.dataset.kb){t.blur();t.setAttribute('inputmode','text')}t.focus();try{const n=t.value.length;t.setSelectionRange(n,n)}catch(e){}}
+function setBtn(b,on){b.classList.toggle('on',on);b.querySelector('.mt').textContent=on?'Stop':'Speak'}
+function finish(){
+  if(!recBox)return;const t=recBox,b=recBtn;
+  t.value=recBase.trim();recBox=null;recBtn=null;rec=null;setBtn(b,false);
+  if(FIG.includes(t.id)||t.id==='sal'){tidy(t.id)}
+  t.dispatchEvent(new Event('input'));calc();
+}
 document.querySelectorAll('.mic').forEach(b=>b.addEventListener('click',()=>{
-  const t=$(b.dataset.t);if(b.dataset.kb){t.blur();t.setAttribute('inputmode','text')}t.focus();
-  try{const n=t.value.length;t.setSelectionRange(n,n)}catch(e){}
+  const t=$(b.dataset.t);
+  if(rec){const same=b===recBtn;try{rec.stop()}catch(e){}finish();if(same)return}
+  if(!srOK||!navigator.onLine){keyboard(b,t);return}
+  let r;try{r=new SR()}catch(e){srOK=false;keyboard(b,t);return}
+  r.lang='en-GB';r.continuous=true;r.interimResults=true;
+  rec=r;recBtn=b;recBox=t;recBase=t.value&&!/\s$/.test(t.value)?t.value+' ':t.value;setBtn(b,true);
+  r.onresult=e=>{if(r!==rec)return;let interim='';for(let i=e.resultIndex;i<e.results.length;i++){const x=e.results[i];if(x.isFinal)recBase+=x[0].transcript.trim()+' ';else interim+=x[0].transcript}
+    t.value=recBase+interim;if(!FIG.includes(t.id)&&t.id!=='sal'){t.dispatchEvent(new Event('input'))}};
+  r.onerror=e=>{if(r!==rec)return;const er=e.error;finish();
+    if(er==='not-allowed'||er==='service-not-allowed'){srOK=false;flash(t,'Microphone not allowed. Tap Speak to use your keyboard’s microphone instead.')}
+    else if(er==='network'){flash(t,'No signal for the app’s microphone. Tap Speak to use your keyboard’s microphone.');srOK=false}
+    else if(er!=='no-speech'&&er!=='aborted'){flash(t,'Microphone stopped. Tap Speak to try again.')}};
+  r.onend=()=>{if(r===rec)finish()};
+  try{r.start()}catch(e){finish();srOK=false;keyboard(b,t)}
 }));
 }
 </script>
