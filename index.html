@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>SG Tool</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#c8371e">
+<meta name="theme-color" content="#2f5d8a">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
@@ -14,7 +14,7 @@
    PICTURE: the working tool itself: dictation pad, then the finished record
    COLOUR and TYPE: stone ground, white panels, black ink, brick accent; Schibsted Grotesk
    LAYOUT: one column, dictate at top, record below, figures as a ruled table */
-:root{color-scheme:light dark;--bg:light-dark(#e7e4df,#171513);--panel:light-dark(#fff,#221f1c);--ink:light-dark(#141210,#f1eee9);--mute:light-dark(#625d56,#a7a097);--rule:light-dark(#d3cec6,#3a3530);--acc:#c8371e;--accInk:#fff;--soft:light-dark(#f6f4f1,#1c1a17)}
+:root{color-scheme:light dark;--bg:light-dark(#eef2f6,#11171e);--panel:light-dark(#fff,#1a222c);--ink:light-dark(#18222e,#e8edf3);--mute:light-dark(#5a6878,#9aa8b7);--rule:light-dark(#d5dde6,#2d3946);--acc:light-dark(#2f5d8a,#7eaad6);--accInk:light-dark(#fff,#0c1724);--soft:light-dark(#f7f9fb,#151c25);--bad:light-dark(#c0392b,#ff8a7a)}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
@@ -60,7 +60,7 @@ th,td{padding:10px 6px;border-bottom:1px solid var(--rule);text-align:right;whit
 th:first-child,td:first-child{text-align:left}
 th{font-size:14px;color:var(--mute);font-weight:500}
 td.pc{font-weight:700;font-size:18px}
-td.pc.hi{color:var(--acc)}
+td.pc.hi{color:var(--bad)}
 @media(max-width:440px){th,td{padding:9px 3px;font-size:14px}td.pc{font-size:16px}th{font-size:12px}}
 pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid var(--rule);border-radius:10px;padding:14px;margin:0}
 .note{font-size:14px;color:var(--mute)}
@@ -75,7 +75,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
   <section class="panel">
     <div class="sec"><div class="sh"><label for="obs">Observation</label><button class="mic" type="button" data-t="obs"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="obs"></textarea></div>
     <div class="sec"><div class="sh"><label for="act">Action</label><button class="mic" type="button" data-t="act"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="act" style="min-height:260px"></textarea><div class="row qa" data-box="act" style="margin-top:8px"></div></div>
-    <div class="sec"><div class="sh"><label for="aff">Affordability information</label><button class="mic" type="button" data-t="aff"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="aff"></textarea></div>
+    <div class="sec"><div class="sh"><label for="aff">Affordability Information</label><button class="mic" type="button" data-t="aff"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="aff"></textarea></div>
     <div class="sec"><div class="sh"><label for="out">Outcome</label><button class="mic" type="button" data-t="out"><span class="dot"></span><span class="mt">Speak</span></button></div><textarea id="out"></textarea><div class="row qa" data-box="out" style="margin-top:8px"></div></div>
     <p class="hint">Speak or type straight into each section.</p>
   </section>
@@ -122,7 +122,7 @@ const P=[['One month','m1',12],['Three months','m3',4],['Twelve months','m12',1]
 const num=v=>{const n=parseFloat(String(v??'').replace(/[\u2212\u2013]/g,'-').replace(/[£,\s]/g,''));return isFinite(n)?n:null};
 const gbp=n=>'£'+n.toLocaleString('en-GB',{minimumFractionDigits:Number.isInteger(n)?0:2,maximumFractionDigits:2});
 const res=n=>(n<0?'-':n>0?'+':'')+gbp(Math.abs(n));
-const pct=n=>Math.abs(n).toLocaleString('en-GB',{maximumFractionDigits:1,minimumFractionDigits:1})+'%';
+const pct=n=>Math.abs(n).toLocaleString('en-GB',{maximumFractionDigits:0})+'%';
 
 function calc(){
   const sal=num($('sal').value);
@@ -133,7 +133,7 @@ function calc(){
     const inc=sal&&sal>0?sal/div:null;
     const p=v!=null&&inc?v/inc*100:null;
     const tr=document.createElement('tr');
-    [name,v!=null?res(v):'–',inc?gbp(Math.round(inc)):'–',p!=null?pct(p):'–'].forEach((t,i)=>{const td=document.createElement('td');td.textContent=t;if(i===3){td.className='pc'+(p!=null&&p<=-10?' hi':'')}tr.appendChild(td)});
+    [name,v!=null?res(v):'–',inc?gbp(Math.round(inc)):'–',p!=null?pct(p):'–'].forEach((t,i)=>{const td=document.createElement('td');td.textContent=t;if(i===3){td.className='pc'+(p!=null&&Math.round(Math.abs(p))>=70?' hi':'')}tr.appendChild(td)});
     tb.appendChild(tr);
     lines.push(name+': '+(v!=null?res(v):'')+(p!=null&&v!==0?' ('+pct(p)+' of income '+(v<0?'lost':'won')+')':''));
   }
@@ -148,8 +148,8 @@ $('incSal').addEventListener('change',calc);
 const DEFAULTS=[
  {id:'PG',box:'act',mode:'start',label:'No signs of PG',text:"The customer was willing to take a break to have the interaction and showed no signs of PG."},
  {id:'FF',box:'act',mode:'end',label:'Friends and Family',text:"The customer confirmed that their friends and family don't have any concerns about their casino visits and level of play."},
- {id:'SRM',box:'act',mode:'para',label:'SRMs',text:"Safer gambling tools have been discussed, such as SENSE, SRMs, leaflets on site, and should they have any issues to speak with a member of staff."},
- {id:'BR',box:'out',mode:'end',label:'Continue BR',text:"BR to continue customer to be monitored through PBI and RM for high velocity play, if so, further interactions will take place."}
+ {id:'SRM',box:'act',mode:'para',label:'SRMs',text:"Safer gambling tools have been discussed, such as SENSE, SRMs and leaflets on site, and should they have any issues, they can speak with a member of staff."},
+ {id:'BR',box:'out',mode:'end',label:'Continue BR',text:"BR to continue. Customer to be monitored through PBI and RM for high-velocity play; if this occurs, further interactions will take place."}
 ];
 const CKEY='sgtool-buttons';
 let custom={};
