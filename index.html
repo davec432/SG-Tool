@@ -36,7 +36,8 @@ h1{font-size:clamp(28px,6vw,40px);line-height:1.05;margin:0;text-wrap:balance}
 #instHint{flex-basis:100%;margin:0;font-size:15px;color:var(--mute)}
 .lede{color:var(--mute);margin:0 0 22px;max-width:60ch}
 .panel{background:var(--panel);border:1px solid var(--rule);border-radius:14px;padding:clamp(16px,3vw,24px);margin-bottom:18px}
-h2{font-size:20px;margin:0 0 12px}
+h2,h3.sub,.sec>.sh>label{font-size:18px;font-weight:700;line-height:1.3;color:var(--ink)}
+h2{margin:0 0 12px}
 label{font-weight:500;display:block;margin-bottom:6px}
 textarea,input{font:inherit;font-size:16px;color:var(--ink);background:var(--soft);border:1px solid var(--rule);border-radius:10px;padding:12px;width:100%}
 textarea{min-height:96px;resize:none;overflow:hidden;display:block}
@@ -54,6 +55,7 @@ button:disabled{opacity:.5;cursor:default}
 @media(prefers-reduced-motion:reduce){.mic.on .dot{animation:none}}
 summary{cursor:pointer;list-style:none;min-height:44px;display:flex;align-items:center;gap:8px}summary::-webkit-details-marker{display:none}summary::after{content:"\25BE";font-size:18px;color:var(--mute)}details[open] summary::after{content:"\25B4"}
 .cb{border-top:1px solid var(--rule);padding:14px 0}.cb:first-child{border-top:0}.cb .meta{font-size:13px;color:var(--mute);margin:0 0 6px}.cb input{margin-bottom:8px}.cb textarea{min-height:96px}.cb .row{margin-top:8px}
+h3.sub{margin:8px 0 0;padding-top:12px;border-top:1px solid var(--rule)}
 .sh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
 .sh label{margin:0}
 .sh .mic{min-height:44px;padding:0 14px}
@@ -99,6 +101,7 @@ pre{white-space:pre-wrap;font:inherit;background:var(--soft);border:1px solid va
     <h2>Affordability</h2>
     <div class="grid">
       <div class="full"><div class="sh"><label for="sal">Annual salary</label><button class="mic sm" type="button" data-t="sal" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="money"><span>£</span><input id="sal" inputmode="decimal" autocomplete="off"></div></div>
+      <div class="full"><h3 class="sub">Gaming Figures</h3></div>
       <div><div class="sh"><label for="m1">One month</label><button class="mic sm" type="button" data-t="m1" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m1" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m1" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
       <div><div class="sh"><label for="m3">Three months</label><button class="mic sm" type="button" data-t="m3" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m3" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m3" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
       <div><div class="sh"><label for="m12">Twelve months</label><button class="mic sm" type="button" data-t="m12" data-kb="1"><span class="dot"></span><span class="mt">Speak</span></button></div><div class="fig2"><button type="button" class="pm" data-t="m12" aria-label="Switch plus or minus">±</button><div class="money"><span>£</span><input id="m12" inputmode="decimal" autocomplete="off" placeholder="-"></div></div></div>
@@ -154,7 +157,7 @@ function calc(){
   }
   const parts=['Observation: '+$('obs').value.trim(),'','Action: '+$('act').value.trim(),...($('aff').value.trim()?['',$('aff').value.trim()]:[]),'','Outcome: '+$('out').value.trim(),''];
   if($('incSal').checked&&sal)parts.push('Annual salary: '+gbp(sal));
-  $('final').textContent=parts.concat(lines).join('\n');
+  $('final').textContent=parts.concat(['Gaming Figures'],lines).join('\n');
 }
 ['obs','act','aff','out','sal','m1','m3','m12'].forEach(id=>$(id).addEventListener('input',calc));
 $('incSal').addEventListener('change',calc);
